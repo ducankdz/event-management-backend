@@ -10,10 +10,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/auth")
@@ -39,7 +36,7 @@ public class AuthController {
                     MessageResponse.builder()
                             .message(e.getMessage())
                             .build(),
-                    HttpStatus.CREATED
+                    HttpStatus.OK
             );
         }
     }
@@ -62,6 +59,26 @@ public class AuthController {
         } catch (Exception e) {
             return new ResponseEntity<>(
                     AuthResponse.builder()
+                            .message(e.getMessage())
+                            .build(),
+                    HttpStatus.OK
+            );
+        }
+    }
+    @PostMapping("/otp/verify")
+    @Operation(
+            summary = "Xác thực OTP",
+            description = "API này sẽ nhận email và mã OTP để xác thực người dùng."
+    )
+    public ResponseEntity<?> verifyOtp(@RequestParam String email,
+                                       @RequestParam String otp) {
+        try {
+            User user = authService.verifyOtp(email, otp);
+            UserResponse userResponse = UserResponse.fromUser(user);
+            return ResponseEntity.ok(userResponse);
+        } catch (Exception e) {
+            return new ResponseEntity<>(
+                    MessageResponse.builder()
                             .message(e.getMessage())
                             .build(),
                     HttpStatus.OK

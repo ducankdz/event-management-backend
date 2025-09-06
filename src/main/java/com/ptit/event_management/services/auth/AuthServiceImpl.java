@@ -2,11 +2,15 @@ package com.ptit.event_management.services.auth;
 
 import com.ptit.event_management.configurations.JwtTokenUtil;
 import com.ptit.event_management.dtos.AuthDTO;
+import com.ptit.event_management.models.Otp;
 import com.ptit.event_management.models.Role;
 import com.ptit.event_management.models.User;
+import com.ptit.event_management.repositories.OtpRepository;
 import com.ptit.event_management.repositories.RoleRepository;
 import com.ptit.event_management.repositories.UserRepository;
+import com.ptit.event_management.services.email.EmailService;
 import com.ptit.event_management.services.user.CustomUserDetailsServiceImpl;
+import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -23,14 +27,17 @@ import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
-public class AuthServiceImpl implements AuthService{
+public class AuthServiceImpl implements AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenUtil jwtTokenUtil;
     private final CustomUserDetailsServiceImpl customUserDetailsService;
     private final RoleRepository roleRepository;
+    private final OtpRepository otpRepository;
+    private final EmailService emailService;
+
     @Override
-    public User register(AuthDTO authDTO) {
+    public User register(AuthDTO authDTO) throws MessagingException {
         String email = authDTO.getEmail();
         if (userRepository.existsByEmail(email)) {
             throw new RuntimeException("Email already exists");
@@ -58,11 +65,25 @@ public class AuthServiceImpl implements AuthService{
                         .isVerified(false)
                         .build();
         User savedUser = userRepository.save(newUser);
+
+
+        String otpCode = emailService.generateOtp();
+        LocalDateTime otpExpiration = LocalDateTime.now().plusMinutes(2);
+        Otp otp = Otp.builder()
+                .otp(otpCode)
+                .expirationTime(Timestamp.valueOf(otpExpiration))
+                .user(savedUser)
+                .build();
+        otpRepository.save(otp);
+
+        // Send OTP Mail
+        emailService.sendOtpMail(email, otpCode);
+
         return savedUser;
     }
 
     @Override
-    public String login(AuthDTO authDTO) {
+    public String login(AuthDTO authDTO) throws Exception {
         String email = authDTO.getEmail();
         String password = authDTO.getPassword();
         User user =
@@ -70,10 +91,10 @@ public class AuthServiceImpl implements AuthService{
                         .findByEmail(email)
                         .orElseThrow(() -> new BadCredentialsException("Invalid email or password"));
 
-//        if (!user.isVerified()) {
-//            throw new RuntimeException(
-//                    "Your email has not been verified. Please verify your email before logging in.");
-//        }
+        if (!user.isVerified()) {
+            throw new RuntimeException(
+                    "Your email has not been verified. Please verify your email before logging in.");
+        }
         UserDetails userDetails = customUserDetailsService.loadUserByUsername(email);
         if (userDetails == null) {
             throw new BadCredentialsException("Invalid email or password");
@@ -88,7 +109,33 @@ public class AuthServiceImpl implements AuthService{
     }
 
     @Override
-    public User verifyOtp(String email, String otp) {
-        return null;
+    public User verifyOtp(String email, String otpCode) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+
+        // Lấy OTP theo user và mã OTP
+        Otp otp = otpRepository.findTopByUserAndOtpOrderByExpirationTimeDesc(user, otpCode)
+                .orElseThrow(() -> new RuntimeException("Invalid OTP"));
+
+        // Kiểm tra thời hạn OTP
+        if (otp.getExpirationTime().before(Timestamp.valueOf(LocalDateTime.now()))) {
+            throw new RuntimeException("OTP has expired");
+        }
+
+        // Nếu hợp lệ thì xác minh user
+        user.setVerified(true);
+        userRepository.save(user);
+
+//        otpRepository.delete(otp);
+        return user;
     }
+
+    @Override
+    public User getUserFromToken(String token) {
+        String email = jwtTokenUtil.getEmailFromToken(token);
+        return userRepository
+                .findByEmail(email)
+                .orElseThrow(() -> new BadCredentialsException("Invalid email"));
+    }
+
 }

@@ -9,6 +9,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import java.sql.Timestamp;
 import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -48,10 +49,13 @@ public class User implements UserDetails {
     @ManyToMany(fetch = FetchType.EAGER)
     Set<Role> roles;
 
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    List<Otp> otps;
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return roles.stream().map(role ->
-                new SimpleGrantedAuthority(
+                new SimpleGrantedAuthority("ROLE_" +
                         role.getName().name()))
                 .collect(Collectors.toList());
     }

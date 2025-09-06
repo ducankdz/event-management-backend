@@ -1,5 +1,6 @@
 package com.ptit.event_management.configurations;
 
+
 import com.ptit.event_management.models.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -12,7 +13,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
-import java.security.InvalidParameterException;
 import java.util.Base64;
 import java.util.Date;
 
@@ -30,23 +30,23 @@ public class JwtTokenUtil {
     }
 
     public static SecretKey getKey() {
-            byte[] bytes = Base64.getDecoder().decode(SECRET_KEY);
+        byte[] bytes = Base64.getDecoder().decode(SECRET_KEY);
         return Keys.hmacShaKeyFor(bytes);
     }
 
-    public static String generateToken(Authentication auth) {
+    public static String generateToken(Authentication auth) throws Exception {
         try {
             User userDetails = (User) auth.getPrincipal();
 
             return Jwts.builder()
                     .signWith(getKey())
                     .claim("email", userDetails.getEmail())
-                    .claim("userId", userDetails.getId())
+//                    .claim("user-id", userDetails.getId())
                     .setIssuedAt(new Date())
                     .setExpiration(new Date(System.currentTimeMillis() + 86400000))
                     .compact();
         } catch (Exception e) {
-            throw new InvalidParameterException("Cannot create jwt token, error = " + e.getMessage());
+            throw new Exception("Cannot create jwt token, error = " + e.getMessage());
         }
     }
 
@@ -60,7 +60,7 @@ public class JwtTokenUtil {
         return Jwts.parserBuilder().setSigningKey(getKey()).build().parseClaimsJws(jwt).getBody();
     }
 
-    public static String getEmailFromToken(String jwt) {
+    public String getEmailFromToken(String jwt) {
         if (jwt != null && jwt.startsWith("Bearer ")) {
             jwt = jwt.substring(7);
         }
@@ -95,3 +95,4 @@ public class JwtTokenUtil {
         }
     }
 }
+
