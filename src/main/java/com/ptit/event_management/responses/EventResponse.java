@@ -1,15 +1,14 @@
 package com.ptit.event_management.responses;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.ptit.event_management.models.*;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 
 import java.sql.Timestamp;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Data
 @AllArgsConstructor
@@ -18,10 +17,10 @@ import java.util.List;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class EventResponse {
     Long id;
-    User owner;
+    UserResponse owner;
     String name;
     String avatar;
-    List<EventImage> images;
+    List<String> images;
     String description;
     EventStatus status;
     Timestamp startedAt;
@@ -29,4 +28,29 @@ public class EventResponse {
     Location location;
     Timestamp createdAt;
     Timestamp updatedAt;
+
+    public static EventResponse fromEvent(Event event) {
+        if (event == null) {
+            return null;
+        }
+        return EventResponse.builder()
+                .id(event.getId())
+                .name(event.getName())
+                .avatar(event.getAvatar())
+                .images(
+                    Optional.ofNullable(event.getImages())
+                        .orElse(List.of())
+                        .stream()
+                        .map(EventImage::getUrl)
+                        .collect(Collectors.toList())
+                )
+                .description(event.getDescription())
+                .status(event.getStatus())
+                .startedAt(event.getStartedAt())
+                .endedAt(event.getEndedAt())
+                .location(event.getLocation())
+                .createdAt(event.getCreatedAt())
+                .updatedAt(event.getUpdatedAt())
+                .build();
+    }
 }

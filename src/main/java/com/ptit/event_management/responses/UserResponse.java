@@ -17,17 +17,17 @@ public class UserResponse {
     Long id;
     String email;
     String fullName;
+    String phone;
     String avatar;
-    Set<Role> roles;
     Timestamp createdAt;
 
     public static UserResponse fromUser(User user) {
         return UserResponse.builder()
                 .id(user.getId())
                 .email(user.getEmail())
+                .phone(user.getPhone())
                 .fullName(user.getFullName())
                 .avatar(user.getAvatar())
-                .roles(user.getRoles())
                 .createdAt(user.getCreatedAt())
                 .build();
     }

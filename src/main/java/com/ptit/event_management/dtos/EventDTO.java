@@ -12,7 +12,7 @@ import java.util.List;
 public class EventDTO {
     String name;
     String avatar;
-//    List<String> images;
+    List<String> images;
     Timestamp startedAt;
     Timestamp endedAt;
     String description;

@@ -66,7 +66,6 @@ public class AuthServiceImpl implements AuthService {
                         .build();
         User savedUser = userRepository.save(newUser);
 
-
         String otpCode = emailService.generateOtp();
         LocalDateTime otpExpiration = LocalDateTime.now().plusMinutes(2);
         Otp otp = Otp.builder()
