@@ -41,9 +41,7 @@ public class EventController {
         try {
             User user = authService.getUserFromToken(token);
             Event event = eventService.createEvent(dto, user.getId());
-            UserResponse userResponse = UserResponse.fromUser(event.getOwner());
             EventResponse eventResponse = EventResponse.fromEvent(event);
-            eventResponse.setOwner(userResponse);
             return new ResponseEntity<>(eventResponse, HttpStatus.CREATED);
         }
         catch (Exception e){
@@ -65,9 +63,7 @@ public class EventController {
         try {
             User user = authService.getUserFromToken(token);
             Event event = eventService.getEventDetail(id);
-            UserResponse userResponse = UserResponse.fromUser(event.getOwner());
             EventResponse eventResponse = EventResponse.fromEvent(event);
-            eventResponse.setOwner(userResponse);
             return new ResponseEntity<>(eventResponse, HttpStatus.CREATED);
         }
         catch (Exception e){
@@ -80,7 +76,7 @@ public class EventController {
         }
     }
     @PreAuthorize("hasRole('ROLE_USER')")
-    @PutMapping("/{id}")
+    @PatchMapping("/{id}")
     @Operation(
             summary = "Cập nhật sự kiện",
             description = "API này cho phép người dùng cập nhật thông tin sự kiện đã tồn tại."
@@ -92,9 +88,7 @@ public class EventController {
         try {
             User user = authService.getUserFromToken(token);
             Event event = eventService.updateEvent(id, dto, user.getId());
-            UserResponse userResponse = UserResponse.fromUser(event.getOwner());
             EventResponse eventResponse = EventResponse.fromEvent(event);
-            eventResponse.setOwner(userResponse);
             return new ResponseEntity<>(eventResponse, HttpStatus.OK);
         }
         catch (Exception e){
@@ -145,11 +139,7 @@ public class EventController {
         try {
             User user = authService.getUserFromToken(token);
             return ResponseEntity.ok(
-                    eventService.getAll(pageable).map(event -> {
-                        EventResponse response = EventResponse.fromEvent(event);
-                        response.setOwner(UserResponse.fromUser(event.getOwner()));
-                        return response;
-                    })
+                    eventService.getAll(pageable).map(EventResponse::fromEvent)
             );
         } catch (Exception e) {
             return new ResponseEntity<>(
@@ -183,7 +173,7 @@ public class EventController {
 //    }
 
     // Đổi trạng thái sự kiện
-    @PutMapping("/{id}/status")
+    @PatchMapping("/{id}/status")
     @PreAuthorize("hasRole('ROLE_USER')")
     @Operation(summary = "Đổi trạng thái sự kiện", description = "API cho phép thay đổi trạng thái của sự kiện.")
     public ResponseEntity<?> changeStatus(
@@ -194,7 +184,6 @@ public class EventController {
             User user = authService.getUserFromToken(token);
             Event event = eventService.changStatus(id, status);
             EventResponse response = EventResponse.fromEvent(event);
-            response.setOwner(UserResponse.fromUser(event.getOwner()));
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             return new ResponseEntity<>(
@@ -294,7 +283,7 @@ public class EventController {
     }
 
     // Gán địa điểm cho sự kiện
-    @PutMapping("/{id}/location/{locationId}")
+    @PatchMapping("/{id}/location/{locationId}")
     @PreAuthorize("hasRole('ROLE_USER')")
     @Operation(summary = "Gán địa điểm cho sự kiện", description = "API này cho phép chủ sự kiện gán địa điểm.")
     public ResponseEntity<?> setLocation(
@@ -305,7 +294,6 @@ public class EventController {
             User user = authService.getUserFromToken(token);
             Event event = eventService.setLocation(id, locationId, user.getId());
             EventResponse response = EventResponse.fromEvent(event);
-            response.setOwner(UserResponse.fromUser(event.getOwner()));
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             return new ResponseEntity<>(
@@ -327,11 +315,7 @@ public class EventController {
         try {
             User user = authService.getUserFromToken(token);
             return ResponseEntity.ok(
-                    eventService.getEventByUser(user.getId(), pageable).map(event -> {
-                        EventResponse response = EventResponse.fromEvent(event);
-                        response.setOwner(UserResponse.fromUser(event.getOwner()));
-                        return response;
-                    })
+                    eventService.getEventByUser(user.getId(), pageable).map(EventResponse::fromEvent)
             );
         } catch (Exception e) {
             return new ResponseEntity<>(

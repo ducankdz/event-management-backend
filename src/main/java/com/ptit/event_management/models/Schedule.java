@@ -5,48 +5,36 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.annotations.Where;
-import org.hibernate.type.SqlTypes;
 
 import java.sql.Timestamp;
 import java.util.List;
 
 @Entity
 @Data
-@Table(name = "events")
+@Table(name = "schedules")
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Where(clause = "is_deleted = false")
-public class Event {
+public class Schedule {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
 
+    // Sự kiện mà schedule này thuộc về
     @ManyToOne
+    @JoinColumn(name = "event_id", nullable = false)
     @JsonIgnore
-    User owner;
+    Event event;
 
-    String name;
+    String title;        // tiêu đề (ví dụ: "Khai mạc", "Workshop AI")
+    String description;  // mô tả chi tiết
 
-    String avatar;
-
-    @OneToMany(mappedBy = "event", cascade = CascadeType.ALL, orphanRemoval = true)
-    List<EventImage> images;
-
-    String description;
-
-    @Enumerated(EnumType.STRING)
-    EventStatus status;
-
-    Timestamp startedAt;
-    Timestamp endedAt;
-
-    @ManyToOne
-    Location location;
+    Timestamp startedAt; // thời gian bắt đầu
+    Timestamp endedAt;   // thời gian kết thúc
 
     @CreationTimestamp
     Timestamp createdAt;
@@ -56,11 +44,6 @@ public class Event {
 
     boolean isDeleted = false;
 
-    Long budget;
-
-    @Transient
-    private Long actualCost;
-
-    @OneToMany(mappedBy = "event", cascade = CascadeType.ALL, orphanRemoval = true)
-    List<Schedule> schedules;
+    @OneToMany(mappedBy = "schedule", cascade = CascadeType.ALL, orphanRemoval = true)
+    List<ScheduleImage> images;  // danh sách ảnh cho schedule
 }

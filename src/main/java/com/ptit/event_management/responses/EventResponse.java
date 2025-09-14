@@ -37,6 +37,7 @@ public class EventResponse {
                 .id(event.getId())
                 .name(event.getName())
                 .avatar(event.getAvatar())
+                .owner(UserResponse.fromUser(event.getOwner()))
                 .images(
                     Optional.ofNullable(event.getImages())
                         .orElse(List.of())
